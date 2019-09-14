@@ -761,7 +761,7 @@ class Tree(object):
         gen_rules_tree rewrites a tree as a set of rules to make eval easier 
         NOTE: x denotes features, leaf_id denotes node_id of the leaves
         """
-        self.rules = 'leaf_id = np.zeros(x.shape[0], dtype="int"); '
+        self.rules = ''
         for node_id in self.leaf_nodes:
             if node_id == 0:
                 s = ''
@@ -803,8 +803,11 @@ class Tree(object):
         """
         faster version of predict_real_val
         """
-        exec(self.rules)    # create variable "leaf_id"
-        pred_val = self.pred_val_n[leaf_id]
+        g_dict = {}
+        g_dict['x'] = x
+        g_dict['leaf_id'] = np.zeros(x.shape[0], dtype="int")
+        exec(self.rules, g_dict)    # create variable "leaf_id"
+        pred_val = self.pred_val_n[g_dict['leaf_id']]
         return pred_val
 
     def compute_psplit(self, node_id, param):
