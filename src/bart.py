@@ -61,15 +61,15 @@ class BART(object):
         self.trees[i_t].gen_rules_tree()
         tmp = self.trees[i_t].predict_real_val_fast(data['x_train'], param, settings)
         if settings.debug == 1:
-            print 'current data[y_train] = %s' % data['y_train']
-            print 'predictions of current tree = %s' % tmp
+            print('current data[y_train] = %s' % data['y_train'])
+            print('predictions of current tree = %s' % tmp)
         self.pred_val_sum_train += tmp
         self.pred_val_sum_train -= self.pred_val_mat_train[:, i_t]
         # could use residual here for minor performance speedup
         self.pred_val_mat_train[:, i_t] = tmp
         if settings.debug == 1:
-            print 'current data[y_train_orig] = %s' % data['y_train_orig']
-            print 'predictions of current bart = %s' % self.pred_val_sum_train
+            print('current data[y_train_orig] = %s' % data['y_train_orig'])
+            print('predictions of current bart = %s' % self.pred_val_sum_train)
 
     def update_pred_val_sum(self):
         self.pred_val_sum_train = self.pred_val_mat_train.sum(1)
@@ -94,8 +94,11 @@ class BART(object):
         pred_val = np.zeros(x.shape[0])
         log_const = 0.5 * math.log(param.lambda_bart) - 0.5 * math.log(2 * math.pi)
         for i_t in range(settings.m_bart):
-            exec(self.trees[i_t].rules)    # apply rules to "x" and create "leaf_id"
-            pred_val += self.trees[i_t].pred_val_n[leaf_id]
+            g_dict = {}
+            g_dict['leaf_id'] = np.zeros(x.shape[0], dtype="int")
+            g_dict['x'] = x
+            exec(self.trees[i_t].rules, g_dict)    # apply rules to "x" and create "leaf_id"
+            pred_val += self.trees[i_t].pred_val_n[g_dict['leaf_id']]
         pred_prob = np.exp(- 0.5 * param.lambda_bart * ((y - pred_val) ** 2) + log_const)
         d = {'pred_mean': pred_val, 'pred_prob': pred_prob}
         return d
@@ -121,7 +124,7 @@ class BART(object):
         """
         mse_train = compute_mse(data['y_train_orig'], self.pred_val_sum_train)
         if settings.verbose >= 1:
-            print 'mse train = %.3f' % (mse_train)
+            print('mse train = %.3f' % (mse_train))
         return mse_train
 
     def compute_train_mse_orig(self, data, settings):
@@ -137,6 +140,41 @@ class BART(object):
                         - math.log(2 * math.pi) - param.lambda_bart * mse_train)
         return (loglik_train, mse_train)
 
+class Settings:
+    def __init__(self,store_every,m_bart,verbose, mcmc_type, dataset, save, n_iterations, init_id, alpha_split, beta_split, tag, n_run_avg,\
+                 init_pg, data_path, center_y, k_bart, variance, alpha_bart, q_bart, debug, proposal, n_particles, perf_dataset_keys,\
+                 store_every_iteration, sample_y, min_size, ess_threshold, resample, perf_store_keys, op_dir, store_all_stats):
+        self.store_every = store_every
+        self.m_bart = m_bart
+        self.verbose = verbose
+        self.mcmc_type = mcmc_type
+        self.dataset = dataset
+        self.save = save
+        self.n_iterations = n_iterations
+        self.init_id = init_id
+        self.alpha_split = alpha_split
+        self.beta_split = beta_split
+        self.tag = tag
+        self.n_run_avg = n_run_avg
+        self.init_pg = init_pg
+        self.data_path = data_path
+        self.center_y = center_y
+        self.k_bart = k_bart
+        self.variance = variance
+        self.alpha_bart = alpha_bart
+        self.q_bart = q_bart
+        self.debug = debug
+        self.proposal = proposal
+        self.n_particles = n_particles
+        self.perf_dataset_keys = perf_dataset_keys
+        self.store_every_iteration = store_every_iteration
+        self.sample_y = sample_y
+        self.min_size = min_size
+        self.ess_threshold = ess_threshold
+        self.resample = resample
+        self.perf_store_keys = perf_store_keys
+        self.op_dir = op_dir
+        self.store_all_stats = store_all_stats
 
 def compute_mse(true, pred):
     return np.mean((true - pred) ** 2)
@@ -171,7 +209,11 @@ def backup_target(data, settings):
 
 
 def main():
-    settings = process_command_line()
+    settings = Settings(store_every=1, m_bart=5, verbose=0, mcmc_type='pg', dataset='toy-wtw', save=0, n_iterations=200, init_id=1, alpha_split=0.95,\
+                        beta_split=0.5, tag='example', n_run_avg=1, init_pg='empty', data_path='../', center_y = False, k_bart = 1, variance = "leastsquares",\
+                        alpha_bart = 2, q_bart = 0.9, debug = 0, proposal = 'prior', n_particles = 2, perf_dataset_keys = ['train','test'],\
+                        store_every_iteration = 0, sample_y = 1, min_size = 5, ess_threshold = 0.75, resample = 'multinomial',\
+                        perf_store_keys = ['pred_mean', 'pred_prob'], op_dir = "F:/main_abhey/M1/Extra/pgbart-master", store_all_stats = True)
     print 'Current settings:'
     pp.pprint(vars(settings))
 
