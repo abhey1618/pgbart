@@ -22,7 +22,7 @@
 import sys
 import optparse
 import math
-import cPickle as pickle
+import pickle
 import numpy as np
 import pprint as pp
 from scipy.special import gammaln, digamma
