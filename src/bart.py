@@ -214,7 +214,7 @@ def main():
                         alpha_bart = 2, q_bart = 0.9, debug = 0, proposal = 'prior', n_particles = 2, perf_dataset_keys = ['train','test'],\
                         store_every_iteration = 0, sample_y = 1, min_size = 5, ess_threshold = 0.75, resample = 'multinomial',\
                         perf_store_keys = ['pred_mean', 'pred_prob'], op_dir = "F:/main_abhey/M1/Extra/pgbart-master", store_all_stats = True)
-    print 'Current settings:'
+    print('Current settings:')
     pp.pprint(vars(settings))
 
     # Resetting random seed
@@ -222,11 +222,11 @@ def main():
     random.seed(settings.init_id * 1000)
 
     # load data
-    print 'Loading data ...'
+    print('Loading data ...')
     data = load_data(settings)
-    print 'Loading data ... completed'
+    print('Loading data ... completed')
     if settings.center_y:
-        print 'center_y = True; centering the y variables at mean(data[y_train])'
+        print('center_y = True; centering the y variables at mean(data[y_train])')
         center_labels(data, settings)
     backup_target(data, settings)
    
@@ -254,15 +254,15 @@ def main():
     change = True
     tree_order = range(settings.m_bart)
 
-    print 'initial settings:'
-    print 'lambda_bart value = %.3f' % param.lambda_bart
+    print('initial settings:')
+    print('lambda_bart value = %.3f' % param.lambda_bart)
     loglik_train, mse_train = bart.compute_train_loglik(data, settings, param)
-    print 'mse train = %.3f, loglik_train = %.3f' % (mse_train, loglik_train)
+    print('mse train = %.3f, loglik_train = %.3f' % (mse_train, loglik_train))
     
     for itr in range(settings.n_iterations):
         time_init_current = time.clock()
         if settings.verbose >= 1:
-            print '\n%s BART iteration = %7d %s' % ('*'*30, itr, '*'*30)
+            print('\n%s BART iteration = %7d %s' % ('*'*30, itr, '*'*30))
 
         logprior = 0.
 
@@ -274,10 +274,10 @@ def main():
         time_sample_lambda = time.clock() - time_init_current
         logprior += bart.lambda_logprior
 
-        random.shuffle(tree_order)
+        random.shuffle(list(tree_order))
         for i_t in tree_order:
             if settings.debug == 1:
-                print '\ntree_id = %3d' % i_t
+                print('\ntree_id = %3d' % i_t)
             time_init_current_tree = time.clock()
             # update data['y_train']
             bart.update_residual(i_t, data)
@@ -328,7 +328,7 @@ def main():
         if itr == 0:
             mcmc_stats_bart[itr, -1] += time_initialization
         if settings.verbose >=2 :
-            print 'fraction of trees in which MCMC move was accepted = %.3f' % mcmc_stats_bart[itr, 6]
+            print('fraction of trees in which MCMC move was accepted = %.3f' % mcmc_stats_bart[itr, 6])
         if (settings.save == 1):
             for tree in bart.trees:
                 tree.gen_rules_tree()
@@ -338,10 +338,10 @@ def main():
                 for k_store in settings.perf_store_keys:
                     mcmc_tree_predictions[k_data]['accum'][k_store] += pred_tmp[k_data][k_store]
             if itr == 0 and settings.verbose >= 1:
-                print 'Cumulative: itr, itr_run_avg, [mse train, logprob_train, mse test, ' \
-                    'logprob_test, time_mcmc, time_mcmc_prediction], time_mcmc_cumulative'
-                print 'itr, [mse train, logprob_train, mse test, ' \
-                    'logprob_test, time_mcmc, time_mcmc+time_prediction]'
+                print('Cumulative: itr, itr_run_avg, [mse train, logprob_train, mse test, ' \
+                    'logprob_test, time_mcmc, time_mcmc_prediction], time_mcmc_cumulative')
+                print('itr, [mse train, logprob_train, mse test, ' \
+                    'logprob_test, time_mcmc, time_mcmc+time_prediction]')
             if settings.store_every_iteration == 1:
                 store_every_iteration(mcmc_tree_predictions, data, settings, param, itr, \
                                         pred_tmp, mcmc_stats_bart[itr, -1], time_init_current)
@@ -357,41 +357,41 @@ def main():
                             mcmc_tree_predictions[k_data]['pred_prob'][itr_run_avg])
                 itr_range = range(itr_run_avg * settings.n_run_avg, (itr_run_avg + 1) * settings.n_run_avg)
                 if settings.debug == 1:
-                    print 'itr_range = %s' % itr_range
+                    print('itr_range = %s' % itr_range)
                 time_mcmc_train = np.sum(mcmc_stats_bart[itr_range, -1])
                 mcmc_tree_predictions['run_avg_stats'][:, itr_run_avg] = \
                         [ metrics['train']['mse'], metrics['train']['log_prob'], \
                         metrics['test']['mse'], metrics['test']['log_prob'], \
                         time_mcmc_train, time.clock() - time_init_run_avg ]
                 if settings.verbose >= 1:
-                    print 'Cumulative: %7d, %7d, %s, %.2f' % \
+                    print('Cumulative: %7d, %7d, %s, %.2f' % \
                         (itr, itr_run_avg, mcmc_tree_predictions['run_avg_stats'][:, itr_run_avg].T, \
-                        np.sum(mcmc_tree_predictions['run_avg_stats'][-2, :itr_run_avg+1]))
+                        np.sum(mcmc_tree_predictions['run_avg_stats'][-2, :itr_run_avg+1])))
                 itr_run_avg += 1
                 time_init_run_avg = time.clock()
     
     # print results
-    print '\nTotal time (seconds) = %f' % (time.clock() - time_init)
+    print('\nTotal time (seconds) = %f' % (time.clock() - time_init))
     if settings.verbose >=2:
-        print 'mcmc_stats_bart[:, 3:] (not cumulative) = '
-        print 'mean depth, mean num_leaves, mean num_nonleaves, ' + \
-                'mean change, mse_train, lambda_bart, time_itr'
-        print mcmc_stats_bart[:, 3:]
+        print('mcmc_stats_bart[:, 3:] (not cumulative) = ')
+        print('mean depth, mean num_leaves, mean num_nonleaves, ' + \
+                'mean change, mse_train, lambda_bart, time_itr')
+        print(mcmc_stats_bart[:, 3:])
     if settings.verbose >=1:
-        print 'mean of mcmc_stats_bart (discarding first 50% of the chain)'
+        print('mean of mcmc_stats_bart (discarding first 50% of the chain)')
         itr_start = mcmc_stats_bart.shape[0] / 2
         for k, s in enumerate(mcmc_stats_bart_desc):
-            print '%20s\t%.2f' % (s, np.mean(mcmc_stats_bart[itr_start:, k]))
+            print('%20s\t%.2f' % (s, np.mean(mcmc_stats_bart[itr_start:, k])))
 
     if settings.save == 1:
-        print 'predictions averaged across all previous additive trees:'
-        print 'mse train, mean log_prob_train, mse test, mean log_prob_test'
-        print mcmc_tree_predictions['run_avg_stats'][:4,:].T
+        print('predictions averaged across all previous additive trees:')
+        print('mse train, mean log_prob_train, mse test, mean log_prob_test')
+        print(mcmc_tree_predictions['run_avg_stats'][:4,:].T)
 
     # Write results to disk
     if settings.save == 1:
         filename = get_filename_bart(settings)
-        print 'filename = ' + filename
+        print('filename = ' + filename)
         results = {}
         results['mcmc_stats_bart'] = mcmc_stats_bart
         results['mcmc_stats_bart_desc'] = mcmc_stats_bart_desc
@@ -402,7 +402,7 @@ def main():
             results['data'] = data
         pickle.dump(results, open(filename, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
         filename2 = filename[:-1] + 'tree_predictions.p'
-        print 'predictions stored in file: %s' % filename2
+        print('predictions stored in file: %s' % filename2)
         pickle.dump(mcmc_tree_predictions, open(filename2, "wb"), protocol=pickle.HIGHEST_PROTOCOL)
 
 
